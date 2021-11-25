@@ -4,20 +4,7 @@ parameters:
     default: 'pyrelease'
   - name: requirements
     type: string
-    default: |
-     datetime==4.3
-     requests==2.26.0
-     veracode-api-signing==21.3.0
-     zope.interface==5.4.0
-     pytz==2021.1
-     urllib3==1.26.7
-     charset-normalizer==2.0.6
-     certifi==2021.5.30
-     idna==3.2
-     docopt==0.6.2
-     httpie==1.0.3
-     Pygments==2.10.0
-     setuptools==58.1.0
+    default: ""
 
 steps:
   # CREATE VIRTUAL ENV
