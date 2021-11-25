@@ -1,0 +1,47 @@
+parameters:
+  - name: invokeType
+    type: string
+    default: 'onFileCreate'
+    values:
+      - 'onDestroy'
+      - 'onFileCreate'
+steps:
+  - task: PythonScript@0
+    displayName: "Remove temporary files"
+    condition: always()
+    inputs:
+      scriptSource: inline
+      script: |
+        import os
+        import sys
+        import csv
+
+        """
+        REMOVE files that are listen in tempFilesIndex.lock
+        REMOVE tempFilesIndex.lock
+
+        IF invoked with invokeType == onFileCreate (default)
+          FAIL if tempFilesIndex.lock not exits
+        ELSE
+          EXIT 0 if no lock file found (probably all files were cleared proprely)
+        
+        """
+
+        if not os.path.isfile("tempFilesIndex.lock"):
+          if "${{parameters.invokeType}}" == "onDestroy":
+            print("Temp Files not present - No lock file found")
+            sys.exit(0)
+          print("##[error]Lock file not exist!")
+          sys.exit(1)
+        with open("tempFilesIndex.lock","r",encoding="utf-8") as tfi:
+          lines = csv.reader(tfi,delimiter=",")
+          for line in lines:
+            for file in line:
+              if "$(System.debug)" == "true":
+                print("##[debug] cfil: "+repr(file))
+              if not file:
+                continue
+              os.remove(file)
+              print("file %s removed" % file)
+        os.remove("tempFilesIndex.lock")
+        print("All temporary files removed")

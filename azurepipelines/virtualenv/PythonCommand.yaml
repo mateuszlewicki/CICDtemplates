@@ -1,0 +1,47 @@
+parameters:
+  - name: command
+    type: string
+    default: ''
+  - name: virtualenvName
+    type: string
+    default: 'pyrelease'
+  - name: workingDirectory
+    type: string
+    default: '.'
+  - name: failOnStderr
+    type: boolean
+    default: false
+  - name: env
+    type: object
+    default: []
+  - name: displayName
+    type: string
+    default: ''
+  - name: name
+    type: string
+    default: ''
+  - name: continueOnError
+    type: boolean
+    default: false
+
+# PythonCommand
+# invoke RUN helper with 
+# TYPE: pythonCommand
+# and COMMANDS
+#
+# NOT MEANT TO RUN PYTHON FILES!
+# USE PythonScript.yaml INSTEAD!!
+
+    
+steps:
+  - template: helpers/run.yaml
+    parameters:
+      command: ${{ parameters.command }}
+      virtualenvName: "${{ parameters.virtualenvName }}"
+      workingDirectory: "${{ parameters.workingDirectory }}"
+      env: ${{parameters.env}}
+      displayName: ${{parameters.displayName}}
+      name: ${{parameters.name}}
+      type: "pythonCommand"
+      continueOnError: ${{parameters.continueOnError}}
+

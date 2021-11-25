@@ -1,0 +1,40 @@
+parameters:
+  - name: command
+    type: string
+    default: ''
+  - name: virtualenvName
+    type: string
+    default: 'pyrelease'
+  - name: workingDirectory
+    type: string
+    default: '.'
+  - name: failOnStderr
+    type: boolean
+    default: false
+  - name: env
+    type: object
+    default: []
+  - name: displayName
+    type: string
+    default: ''
+  - name: name
+    type: string
+    default: ''
+  - name: continueOnError
+    type: boolean
+    default: false
+
+# Pip Command
+# template to run pip cli comands in venv
+    
+steps:
+  - template: helpers/run.yaml
+    parameters:
+      command: ${{ parameters.command }}
+      virtualenvName: "${{ parameters.virtualenvName }}"
+      workingDirectory: "${{ parameters.workingDirectory }}"
+      env: ${{parameters.env}}
+      displayName: ${{parameters.displayName}}
+      name: ${{parameters.name}}
+      type: "pipCommand"
+      continueOnError: ${{parameters.continueOnError}}

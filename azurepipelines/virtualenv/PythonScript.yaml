@@ -1,0 +1,71 @@
+parameters:
+  - name: scriptSource
+    type: string
+    default: 'inline'
+    values:
+      - 'inline'
+      - 'filePath'
+  - name: script
+    type: string
+    default: ''
+  - name: scriptPath
+    type: string
+    default: ''
+  - name: virtualenvName
+    type: string
+    default: 'pyrelease'
+  - name: arguments
+    type: string
+    default: ''
+  - name: workingDirectory
+    type: string
+    default: '.'
+  - name: failOnStderr
+    type: boolean
+    default: false
+  - name: env
+    type: object
+    default: []
+  - name: displayName
+    type: string
+    default: ''
+  - name: name
+    type: string
+    default: ''
+  - name: continueOnError
+    type: boolean
+    default: false
+
+# PYTHON SCRIPT
+# this file is trying to mimic the PythonScript@0 task but in venv
+# 
+#
+#
+steps:
+  - ${{ if eq(parameters.scriptSource, 'inline') }}:
+    - template: helpers/convertToFile.yaml
+      parameters:
+        fileContent: "${{ parameters.script }} "
+    - template: helpers/run.yaml
+      parameters:
+        arguments: "${{ parameters.arguments }}"
+        virtualenvName: "${{ parameters.virtualenvName }}"
+        workingDirectory: "${{ parameters.workingDirectory }}"
+        env: ${{parameters.env}}
+        displayName: ${{parameters.displayName}}
+        name: ${{parameters.name}}
+        continueOnError: ${{parameters.continueOnError}}
+  
+    - template: helpers/removeFiles.yaml
+  - ${{ if eq(parameters.scriptSource, 'filepath') }}:
+    - template: helpers/run.yaml
+      parameters:
+        scriptPath: "${{ parameters.scriptPath }}"
+        arguments: "${{ parameters.arguments }}"
+        virtualenvName: "${{ parameters.virtualenvName }}"
+        workingDirectory: "${{ parameters.workingDirectory }}"
+        env: ${{parameters.env}}
+        displayName: ${{parameters.displayName}}
+        name: ${{parameters.name}}
+        continueOnError: ${{parameters.continueOnError}}
+  

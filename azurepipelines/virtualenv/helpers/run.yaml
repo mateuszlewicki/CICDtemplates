@@ -1,0 +1,148 @@
+parameters:
+  - name: scriptPath
+    type: string
+    default: 'tmp.py'
+  - name: arguments
+    type: string
+    default: ''
+  - name: virtualenvName
+    type: string
+    default: 'pyrelease'
+  - name: workingDirectory
+    type: string
+    default: '.'
+  - name: name
+    type: string
+    default: ''
+  - name: displayName
+    type: string
+    default: ''
+  - name: env
+    type: object
+    default: []
+  - name: type
+    type: string
+    default: 'pythonFile'
+    values:
+      - 'pythonFile'
+      - 'pipCommand'
+      - 'pythonCommand'
+  - name: command
+    type: string
+    default: ''
+  - name: continueOnError
+    type: boolean
+    default: false
+steps:
+  - task: PythonScript@0
+    displayName: "Construct command"
+    inputs:
+      scriptSource: inline
+      script: |
+        import re
+        import sys
+
+        """
+        CHECK which on OS we are at and construct commands specify for OS
+        venv - path to virtualEnvironment (execution Python binary)
+        pre_virtual_cmd - helper to Preserve PATH env variable
+
+        virtual_cmd - set venv as primary exec tool
+        |> OS is starting first found interpreter thus if venv path is first
+           OS will start python interpreter in venv path and not OS wide version 
+
+        post_virtual_cmd - set PATH back to original value
+        """
+
+        if "$(Agent.OS)" == "Windows_NT":
+          venv = "$(System.DefaultWorkingDirectory)\\${{parameters.virtualenvName}}"
+          pre_virtual_cmd = "set old_Path=%Path%"
+          virtual_cmd = "set Path=" + venv + "\\Scripts;%Path%"
+          post_virtual_cmd = "Path=%old_Path%"
+        else:
+          venv = "$(System.DefaultWorkingDirectory)/${{parameters.virtualenvName}}"
+          pre_virtual_cmd = "export old_PATH=$PATH"
+          virtual_cmd = "export PATH=" + venv + "/bin:$PATH"
+          post_virtual_cmd = "export PATH=$old_PATH"
+
+        """
+        CHECK which type of command user is trying to invoke
+        types |>
+          pythonFile - python script file
+          pythonCommand - cli python command
+          pipCommand - cli pip command
+
+        variables |>
+          run_command - command which will be run on agent
+          dnp - Display Name Placeholder (will be used if user not provided displayName param)
+          
+        pythonFile |>
+          run_command is prepended with `python` command + quoted path + arguments to script file
+
+        pythonCommand || pipCommand are tested with regex |>
+          run_command is passed command or commands if they passed regex
+        """
+        
+        if "${{parameters.type}}" == "pythonFile":
+          run_command = "python \"${{ parameters.scriptPath }}\" ${{ parameters.arguments }}"
+          dnp = "Run python scripts"
+        else:
+          """
+           pipCommand or pythonCommand needs to start with python or pip
+           respectively. They cannot have ; || && -c to prevent unattened
+           actions or malicious code execution
+
+           pattern syntax|>
+             ^ - start of line
+             () - group
+             | - or
+             \ - escape
+             \s - whitespace
+          pattern |>
+            start of line + not(' any +(python or pip ot empty)) or contains( ; or || or && or " -c ") 
+          """
+          pipPattern = re.compile("^(?!\'*(pip|$))|;|\|\||&&|\$|%")
+          pythonPattern = re.compile("^(?!\'*(python|$))|;|\|\||&&|\s-c\s")
+          command = """${{ parameters.command }}"""
+
+          if "${{parameters.type}}" == "pythonCommand":
+            for line in command.splitlines():
+              if not line:
+                continue
+              if pythonPattern.search(line):
+                print("##[error] not valid python command")
+                sys.exit(1)
+          
+          if "${{parameters.type}}" == "pipCommand":
+            for line in command.splitlines():
+              if not line:
+                continue
+              if pipPattern.search(line):
+                print("##[error] not valid pip command")
+                sys.exit(1)          
+
+          run_command=command
+          dnp = "Run python command" if "${{parameters.type}}" == "pythonCommand" else "Run pip command"
+
+        print("##vso[task.setvariable variable=dnp]"+dnp)
+        print("##vso[task.setvariable variable=run_command]"+run_command)
+        print("##vso[task.setvariable variable=venv]"+venv)
+        print("##vso[task.setvariable variable=pre_virtual_cmd]"+pre_virtual_cmd)
+        print("##vso[task.setvariable variable=virtual_cmd]"+virtual_cmd)
+        print("##vso[task.setvariable variable=post_virtual_cmd]"+post_virtual_cmd)
+
+  - script: |
+      $(pre_virtual_cmd)
+      $(virtual_cmd)
+      cd "${{parameters.workingDirectory}}" 
+      $(run_command)
+      $(post_virtual_cmd)
+    ${{ if parameters.name }}:
+      name: ${{parameters.name}}
+    displayName: "${{coalesce(parameters.displayName,variables.dnp,'Run command')}} (venv)"
+    env: 
+      VIRTUAL_ENV: $(venv)
+      ${{ if parameters.env }}:
+        ${{ each pair in parameters.env }}:
+          ${{format('{0}',pair.key)}}: ${{pair.value}}
+    continueOnError: ${{parameters.continueOnError}}

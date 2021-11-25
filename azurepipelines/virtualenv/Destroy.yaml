@@ -1,0 +1,57 @@
+parameters:
+  - name: virtualenvName
+    type: string
+    default: 'pyrelease'
+
+steps:
+
+  # DESTROY VIRTUAL ENV
+  # REMOVE files related to virtualenv
+  # REMOVE files that were created by user but 
+  # were not removed somehow
+  
+  - task: PythonScript@0
+    displayName: "Destroy virtualenv"
+    condition: always()
+    inputs:
+      scriptSource: inline
+      script: |
+        import os
+        import sys
+        import shutil
+        filesToDelete = []
+        dirsToDelete = []
+
+        if "${{ parameters.virtualenvName}}" != ".":
+          dirsToDelete.append("${{ parameters.virtualenvName}}")
+        else:
+          filesToDelete.append("pyvenv.cfg")
+          if sys.platform == linux:
+            dirsToDelete.append("bin")
+            dirsToDelete.append("lib")
+          else:
+            dirsToDelete.append("Scripts")
+            dirsToDelete.append("Lib")
+            dirsToDelete.append("Include")
+        for dir in dirsToDelete:
+          try:
+            shutil.rmtree(dir)
+            print("dir %s deleted" % dir)
+          except:
+            print("dir %s dont exist!" % dir)
+            sys.exit(1)
+        else:
+          print("Virtualenv directories deleted")
+        for file in filesToDelete:
+          try:
+            os.remove(file)
+            print("file %s deleted" % file)
+          except:
+            print("file %s dont exist!" % file)
+            sys.exit(1)
+        else:
+          print("Virtualenv files deleted")
+
+  - template: helpers/removeFiles.yaml
+    parameters:
+      invokeType: "onDestroy"

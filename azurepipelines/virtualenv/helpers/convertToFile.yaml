@@ -1,0 +1,39 @@
+parameters:
+  - name: fileName
+    type: string
+    default: 'tmp.py'
+  - name: fileContent
+    type: string
+    default: ''
+  - name: displayName
+    type: string
+    default: ''
+steps:
+  - task: PythonScript@0
+    displayName: "${{coalesce(parameters.displayName,'Create temporary file')}}"
+    inputs:
+      scriptSource: inline
+      script: |
+        import os
+        import sys
+
+        """
+        CREATE temporary file with parameters.fileContent
+        IF file exists override
+        AFTER creation of file add it's name to tempFilesIndex.lock
+        IF file tempFileIndex.lock don't exists it will be created
+        """
+        
+        fileContent = """${{ parameters.fileContent}}"""
+        
+        if "$(System.debug)" == 'true':
+          print("##[debug] fileContent dump \n"+fileContent)
+
+        if os.path.isfile("${{parameters.fileName}}"):
+          print("##[warning]File ${{parameters.fileName}} already exist! Overriding!!")
+
+        with open("${{parameters.fileName}}",'w' ,encoding="utf-8") as f:
+              f.write(fileContent)
+        with open("tempFilesIndex.lock", 'a', encoding="utf-8") as tfi:
+              tfi.write("${{parameters.fileName}},")
+
