@@ -13,7 +13,7 @@ parameters:
     default: ''
   - name: virtualenvName
     type: string
-    default: 'pyrelease'
+    default: 'virtualenv'
   - name: arguments
     type: string
     default: ''
