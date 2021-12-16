@@ -43,6 +43,7 @@ steps:
     inputs:
       scriptSource: inline
       script: |
+        from pathlib import Path
         import re
         import sys
 
@@ -59,12 +60,12 @@ steps:
         """
 
         if "$(Agent.OS)" == "Windows_NT":
-          venv = "$(System.DefaultWorkingDirectory)\\${{parameters.virtualenvName}}"
+          venv = "str(Path($(System.DefaultWorkingDirectory)\\${{parameters.virtualenvName}}))"
           pre_virtual_cmd = "set old_Path=%Path%"
           virtual_cmd = "set Path=" + venv + "\\Scripts;%Path%"
           post_virtual_cmd = "set ERR=%errorlevel%; set Path=%old_Path%; exit %ERR%"
         else:
-          venv = "$(System.DefaultWorkingDirectory)/${{parameters.virtualenvName}}"
+          venv = "str(Path($(System.DefaultWorkingDirectory)/${{parameters.virtualenvName}}))"
           pre_virtual_cmd = "export old_PATH=$PATH"
           virtual_cmd = "export PATH=" + venv + "/bin:$PATH"
           post_virtual_cmd = "export ERR=$?; export PATH=$old_PATH; exit $ERR"
