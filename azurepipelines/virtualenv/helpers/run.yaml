@@ -58,12 +58,12 @@ steps:
           venv = "$(System.DefaultWorkingDirectory)\\${{parameters.virtualenvName}}"
           pre_virtual_cmd = "set old_Path=%Path%"
           virtual_cmd = "set Path=" + venv + "\\Scripts;%Path%"
-          post_virtual_cmd = "Path=%old_Path%"
+          post_virtual_cmd = "set ERR=%errorlevel%; set Path=%old_Path%; exit %ERR%"
         else:
           venv = "$(System.DefaultWorkingDirectory)/${{parameters.virtualenvName}}"
           pre_virtual_cmd = "export old_PATH=$PATH"
           virtual_cmd = "export PATH=" + venv + "/bin:$PATH"
-          post_virtual_cmd = "export PATH=$old_PATH"
+          post_virtual_cmd = "export ERR=$?; export PATH=$old_PATH; exit $ERR"
 
         """
         CHECK which type of command user is trying to invoke
