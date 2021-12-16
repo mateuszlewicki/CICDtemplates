@@ -5,6 +5,9 @@ parameters:
   - name: requirements
     type: string
     default: ""
+  - name: baseExtend
+    type: string
+    default: ""
 
 steps:
   # CREATE VIRTUAL ENV
@@ -22,7 +25,9 @@ steps:
     - template: helpers/convertToFile.yaml
       parameters:
         fileName: "requirements.txt"
-        fileContent: "${{ parameters.requirements }}"
+        fileContent: |
+          "${{ parameters.requirements }}"
+          "${{ parameters.baseExtend }}"
         displayName: "Create requirements.txt"
     - template: PipCommand.yaml
       parameters:
