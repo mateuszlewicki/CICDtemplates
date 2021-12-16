@@ -36,6 +36,10 @@ parameters:
 steps:
   - task: PythonScript@0
     displayName: "Construct command"
+    env:
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+      PYTHONIOENCODING: UTF-8
     inputs:
       scriptSource: inline
       script: |
@@ -142,6 +146,9 @@ steps:
     displayName: "${{coalesce(parameters.displayName,variables.dnp,'Run command')}} (venv)"
     env: 
       VIRTUAL_ENV: $(venv)
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+      PYTHONIOENCODING: UTF-8
       ${{ if parameters.env }}:
         ${{ each pair in parameters.env }}:
           ${{format('{0}',pair.key)}}: ${{pair.value}}
