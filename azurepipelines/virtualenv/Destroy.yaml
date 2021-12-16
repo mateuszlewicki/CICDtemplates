@@ -13,6 +13,10 @@ steps:
   - task: PythonScript@0
     displayName: "Destroy virtualenv"
     condition: always()
+    env:
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+      PYTHONIOENCODING: UTF-8
     inputs:
       scriptSource: inline
       script: |
